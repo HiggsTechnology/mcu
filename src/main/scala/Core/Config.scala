@@ -1,4 +1,4 @@
-package core
+package Core
 import chisel3._
 
 abstract class CoreBundle extends Bundle with Config

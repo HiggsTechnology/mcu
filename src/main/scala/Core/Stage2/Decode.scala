@@ -1,7 +1,7 @@
-package core.stage2
+package Core.Stage2
 
 import chisel3._
-import chisel3.util.{BitPat, log2Up}
+import chisel3.util._
 
 trait InstrType {
   def InstrN  = "b0000".U
@@ -16,22 +16,14 @@ trait InstrType {
   val table : Array[(BitPat, List[UInt])]
 }
 
-object SrcType1 {
+object SrcType {
   def typeSize  = 3
   def reg       = 0.U
-  def pc        = 1.U
-  def uimm      = 2.U
-  def width     = log2Up(typeSize).W
-  def uwidth    = UInt(width)
-}
-
-object SrcType2 {
-  def typeSize  = 2
-  def reg       = 0.U
   def imm       = 1.U
+  def pc        = 2.U
+  def uimm      = 3.U
   def width     = log2Up(typeSize).W
   def uwidth    = UInt(width)
-
 }
 
 object FuncType {

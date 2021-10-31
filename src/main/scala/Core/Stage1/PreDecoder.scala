@@ -1,16 +1,14 @@
-package core.stage1
+package Core.Stage1
 
-import core.{SignExt,CoreModule}
+import Core.{SignExt,CoreModule}
 import chisel3._
 import chisel3.util._
 
-
-object BRtype {
+object BrType {
   def B = "b00".U  // branch
   def R = "b01".U  // jalr
   def N = "b10".U  // err instr
   def J = "b11".U  // jal
-
   def apply() = UInt(2.W)
 }
 
@@ -19,7 +17,7 @@ class PreDecode extends CoreModule{
     val instr = Input(UInt(InstWidth))
     val is_br = Output(Bool())
     val offset = Output(UInt(XLEN.W))
-    val br_type = Output(BRtype())
+    val br_type = Output(BrType())
     val is_ret = Output(Bool())
     val iscall = Output(Bool())
   })
@@ -35,23 +33,23 @@ class PreDecode extends CoreModule{
     io.is_br    := false.B
 
     switch(brtype){
-      is(BRtype.J){
+      is(BrType.J){
         io.offset   := SignExt(Cat(instr(31), instr(19,12), instr(20), instr(30,21), 0.U(1.W)), XLEN)
         io.is_br    := true.B
         io.iscall   := instr(11,7) === 1.U || instr(11,7) === 5.U
       }
-      is(BRtype.R){
+      is(BrType.R){
         io.is_br    := true.B
         io.offset   := 4.U
         io.is_ret   := instr(11,7) === 0.U && (instr(19,15) === 1.U || instr(19,15) === 5.U)
         io.iscall   := instr(11,7) === 1.U || instr(11,7) === 5.U
       }
-      is(BRtype.B){
+      is(BrType.B){
         io.is_br   := true.B
         io.offset   := SignExt(Cat(instr(31), instr(7), instr(30,25), instr(11,8), 0.U(1.W)), XLEN)
 
       }
-      is(BRtype.N){
+      is(BrType.N){
         io.offset:= 4.U
         io.is_br    := false.B
       }

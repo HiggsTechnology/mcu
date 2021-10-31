@@ -1,4 +1,4 @@
-package core
+package Core
 
 import Chisel.Mux1H
 import chisel3._
