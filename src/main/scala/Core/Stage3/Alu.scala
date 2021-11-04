@@ -1,10 +1,10 @@
 package Core.Stage3
-import Core.{CoreModule, Fu, LookupTree}
-import Core.Stage2.{ALUOpType}
+import Core.{Config, Fu, LookupTree}
+import Core.Stage2.ALUOpType
 import chisel3._
 import chisel3.util._
 
-class Alu extends CoreModule{
+class Alu extends Module with Config {
   val io = IO(new Bundle{
     val in = Input(new Fu)
     val res = Output(UInt(AddrWidth))
@@ -27,6 +27,6 @@ class Alu extends CoreModule{
     ALUOpType.and   ->   (src1 & src2),
     ALUOpType.sub   ->   (src1 - src2),
     ALUOpType.sra   ->   (src1.asSInt >> shamt).asUInt,
-    ALUOpType.lui  ->    src2
+    ALUOpType.lui   ->    src2
   ))
 }

@@ -1,61 +1,72 @@
 package Core.Stage3
 
 import Core.Stage2.{ALUOpType, BRUOpType, FuncType}
-import Core.{CoreBundle, CoreModule, MicroOp, Redirect}
+import Core.{Config, CoreBundle, MicroOp, Redirect, WriteBack}
 import chisel3._
 import chisel3.util._
 
 
 class ExuIO extends CoreBundle {
-  val in = Flipped(Decoupled(new MicroOp))
-  val redirect = new Redirect
-  val jmp_pc = ValidIO(UInt(AddrWidth))
-  val wb_data = ValidIO(UInt(DataWidth))
+  val in = Flipped(DecoupledIO(new MicroOp))
+  val redirect = ValidIO(new Redirect)
+  val wb = ValidIO(new WriteBack)
 }
 
-class Exu extends CoreModule{
+class Stage3 extends Module with Config {
   val io = IO(new ExuIO)
-  val alu = new Alu
-  val bru = new Bru
-  val lsu = new Lsu
+  val alu = Module(new Alu)
+  val bru = Module(new Bru)
+  val lsu = Module(new Lsu)
+
+  io.in.ready := true.B
 // alu
+  val func_type = io.in.bits.ctrl.func_type
   val func_optype = io.in.bits.ctrl.func_optype
   for(i<-0 until 2){
     alu.io.in.src(i) := io.in.bits.data.src_data(i)
   }
-  alu.io.in.optype := Mux(func_optype === FuncType.alu, io.in.bits.ctrl.func_optype, ALUOpType.add)
-  switch(func_optype){
-    is(FuncType.alu){
-      alu.io.in.optype := io.in.bits.ctrl.func_optype
-      for(i<-0 until 2){
-        alu.io.in.src(i) := io.in.bits.data.src_data(i)
-      }
+  when(func_type === FuncType.alu) {
+    alu.io.in.optype := io.in.bits.ctrl.func_optype
+    for(i<-0 until 2){
+      alu.io.in.src(i) := io.in.bits.data.src_data(i)
     }
-    is(FuncType.bru){
-      alu.io.in.optype := ALUOpType.add
-      alu.io.in.src(0) := Mux(func_optype===BRUOpType.jalr, Cat(io.in.bits.data.src_data(0)(XLEN - 1,1), 0.U(1.W)), io.in.bits.fetch_info.pc)
-      alu.io.in.src(1) := io.in.bits.data.imm
-    }
-    is(FuncType.lsu){
-      alu.io.in.optype := ALUOpType.add
-      alu.io.in.src(0) := io.in.bits.data.src_data(0)
-      alu.io.in.src(1) := io.in.bits.data.imm
-    }
+  }.elsewhen(func_type === FuncType.bru) {
+    alu.io.in.optype := ALUOpType.add
+    alu.io.in.src(0) := Mux(func_optype===BRUOpType.jalr, Cat(io.in.bits.data.src_data(0)(XLEN - 1,1), 0.U(1.W)), io.in.bits.fetch_info.pc)
+    alu.io.in.src(1) := io.in.bits.data.imm
+  }.otherwise {
+    alu.io.in.optype := ALUOpType.add
+    alu.io.in.src(0) := io.in.bits.data.src_data(0)
+    alu.io.in.src(1) := io.in.bits.data.imm
   }
+
   val alu_res = alu.io.res
+  alu.io.in.functype       := io.in.bits.ctrl.func_type
   // bru
-  bru.io.in.optype := io.in.bits.ctrl.func_optype
-  bru.io.in.functype := io.in.bits.ctrl.func_type
-  bru.io.in.src(0) := io.in.bits.data.src_data(0)
-  bru.io.in.src(1) := io.in.bits.data.src_data(1)
-  io.jmp_pc.valid := bru.io.bru_taken
-  io.jmp_pc.bits  := alu_res
+  bru.io.in.optype         := io.in.bits.ctrl.func_optype
+  bru.io.in.functype       := io.in.bits.ctrl.func_type
+  bru.io.in.src(0)         := io.in.bits.data.src_data(0)
+  bru.io.in.src(1)         := io.in.bits.data.src_data(1)
+  io.redirect.valid        := bru.io.bru_taken
+  io.redirect.bits.new_pc  := alu_res
+  io.redirect.bits.mispred := alu_res =/= io.in.bits.fetch_info.pre_pc
 
   // lsu
-  lsu.io.in.optype := io.in.bits.ctrl.func_optype
+  lsu.io.valid       := func_type === FuncType.lsu
+  lsu.io.in.optype   := io.in.bits.ctrl.func_optype
   lsu.io.in.functype := io.in.bits.ctrl.func_type
-  lsu.io.in.src(0) := alu_res
-  lsu.io.in.src(1) := io.in.bits.data.src_data(1)
-  io.wb_data.valid := true.B//TODO
-  io.wb_data.bits  := lsu.io.res.bits
+  lsu.io.in.src(0)   := alu_res
+  lsu.io.in.src(1)   := io.in.bits.data.src_data(1)
+
+  io.wb.valid     := io.in.valid
+  io.wb.bits.ena  := io.in.bits.ctrl.rfWen
+  io.wb.bits.addr := io.in.bits.ctrl.rfrd
+
+  when(func_optype === FuncType.alu) {
+    io.wb.bits.data := alu_res
+  }.elsewhen(func_optype === FuncType.lsu) {
+    io.wb.bits.data := lsu.io.res.bits
+  }.otherwise {
+    io.wb.bits.data := DontCare
+  }
 }

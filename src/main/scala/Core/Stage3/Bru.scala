@@ -1,12 +1,12 @@
 package Core.Stage3
 
 import Core.Stage2.{BRUOpType, FuncType}
-import Core.{CoreModule, Fu, LookupTree}
+import Core.{Config, Fu, LookupTree}
 import chisel3._
 import chisel3.util._
 
 
-class Bru extends CoreModule {
+class Bru extends Module with Config {
   val io = IO(new Bundle{
     val in = Input(new Fu)
     val bru_taken = Output(Bool())

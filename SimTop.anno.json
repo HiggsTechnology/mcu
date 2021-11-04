@@ -1,0 +1,22 @@
+[
+  {
+    "class":"firrtl.transforms.DedupedResult",
+    "original":"~SimTop|RAMHelper",
+    "duplicate":"~SimTop|SimTop/EleCore:EleCore/stage1:Stage1/ram:RAMHelper",
+    "index":0.0
+  },
+  {
+    "class":"firrtl.transforms.DedupedResult",
+    "original":"~SimTop|RAMHelper_1",
+    "duplicate":"~SimTop|SimTop/EleCore:EleCore/stage3:Stage3/lsu:Lsu/ram:RAMHelper",
+    "index":0.5625
+  },
+  {
+    "class":"firrtl.EmitCircuitAnnotation",
+    "emitter":"firrtl.VerilogEmitter"
+  },
+  {
+    "class":"firrtl.transforms.BlackBoxTargetDirAnno",
+    "targetDir":"."
+  }
+]

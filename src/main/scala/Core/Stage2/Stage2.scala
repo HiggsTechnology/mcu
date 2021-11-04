@@ -1,24 +1,25 @@
 package Core.Stage2
 
-import Core.{CoreBundle, CoreModule, FetchInfo, LookupTree, MicroOp, Regfile}
+import Core.{Config, CoreBundle, FetchInfo, FetchPreInfo, LookupTree, MicroOp, Regfile, WriteBack}
 import chisel3.util._
 import chisel3._
 
 
 
-class Stage2IO extends CoreBundle{
-  val in = Flipped(DecoupledIO(new FetchInfo))
-  val out = Decoupled(new MicroOp)
-  val wb_data = Flipped(ValidIO(UInt(DataWidth)))
+class Stage2IO extends CoreBundle {
+  val in = Flipped(DecoupledIO(new FetchPreInfo))
+  val out = DecoupledIO(new MicroOp)
+  val wb = Flipped(ValidIO(new WriteBack))
 }
 
-class Stage2 extends CoreModule{
+class Stage2 extends Module with Config {
   val io = IO(new Stage2IO)
   val idu = Module(new Idu)
-  val reg = Module(new Regfile(numReadPorts = 1,numWritePorts = 1,numReg = RegNum))
+  val reg = Module(new Regfile(numReadPorts = 2,numWritePorts = 1,numReg = RegNum))
   idu.io.in <> io.in
-  private val reg_data = Wire(Vec(2,Vec(2,UInt(XLEN.W))))
-  private val src_in = Wire(Vec(2,Vec(2,UInt(XLEN.W))))
+  idu.io.out.ready := io.in.valid
+  private val reg_data = Wire(Vec(2,UInt(XLEN.W)))
+  private val src_in = Wire(Vec(2,UInt(XLEN.W)))
   reg.io.read(0).addr := idu.io.out.bits.ctrl.rfSrc(0)
   reg.io.read(1).addr := idu.io.out.bits.ctrl.rfSrc(1)
   reg_data(0) := reg.io.read(0).data
@@ -39,7 +40,12 @@ class Stage2 extends CoreModule{
   io.out.bits.data       <> idu.io.out.bits.data
   io.out.bits.data.src_data(0) <> src_in(0)
   io.out.bits.data.src_data(1) <> src_in(1)
+  io.out.valid := io.in.valid
 
+
+  reg.io.write(0).data := io.wb.bits.data
+  reg.io.write(0).ena  := io.wb.bits.ena
+  reg.io.write(0).addr := io.wb.bits.addr
 
 
 }

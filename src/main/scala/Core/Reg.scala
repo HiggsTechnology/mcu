@@ -19,12 +19,12 @@ class RegfileFunc(numReg: Int) extends Config {
 }
 
 class RegReadIO extends Bundle with Config {
-  val addr = Input(UInt(PhyRegIdxWidth.W))
+  val addr = Input(UInt(RegNumWidth.W))
   val data = Output(UInt(XLEN.W))
 }
 
 class RegWriteIO extends Bundle with Config {
-  val addr = Input(UInt(PhyRegIdxWidth.W))
+  val addr = Input(UInt(RegNumWidth.W))
   val data = Input(UInt(XLEN.W))
   val ena  = Input(Bool())
 }
@@ -32,12 +32,12 @@ class RegWriteIO extends Bundle with Config {
 class RegfileIO(numReadPorts: Int, numWritePorts: Int) extends Bundle {
   val read  = Vec(numReadPorts, new RegReadIO)
   val write = Vec(numWritePorts, new RegWriteIO)
-  val debug_read = Vec(32, new RegReadIO)
+//  val debug_read = Vec(32, new RegReadIO)
 }
 
 class Regfile(numReadPorts: Int, numWritePorts: Int, numReg: Int) extends Module {
   val io = IO(new RegfileIO(numReadPorts, numWritePorts))
-  val regfile = new RegfileFunc(numReg)
+  val regfile = new RegfileFunc(32)
 
   for(i <- 0 until numWritePorts){
     when(io.write(i).ena) {
@@ -48,9 +48,12 @@ class Regfile(numReadPorts: Int, numWritePorts: Int, numReg: Int) extends Module
   for(i <- 0 until numReadPorts){
     io.read(i).data := Mux(io.read(i).addr === 0.U, 0.U, regfile.read(io.read(i).addr))
   }
-
-  for (rport <- io.debug_read) {
-    rport.data := Mux(rport.addr === 0.U, 0.U, regfile.read(rport.addr))
-  }
+  val mod = Module(new difftest.DifftestArchIntRegState)
+  mod.io.clock := clock
+  mod.io.coreid := 0.U
+  mod.io.gpr := RegNext(regfile.regs)
+//  for (rport <- io.debug_read) {
+//    rport.data := Mux(rport.addr === 0.U, 0.U, regfile.read(rport.addr))
+//  }
 
 }

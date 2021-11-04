@@ -1,17 +1,17 @@
 package Core.Stage2
 
 
-import Core.{CoreBundle, CoreModule, FetchInfo, LookupTree, MicroOp, SignExt, ZeroExt}
+import Core.{Config, CoreBundle,FetchPreInfo, LookupTree, MicroOp, SignExt, ZeroExt}
 import chisel3._
 import chisel3.util._
 import RVIInstr._
 
 class IduIO extends CoreBundle{
-  val in = Flipped(DecoupledIO(new FetchInfo))
+  val in = Flipped(DecoupledIO(new FetchPreInfo))
   val out = Decoupled(new MicroOp)
 }
 
-class Idu extends CoreModule{
+class Idu extends Module with  Config{
   val io = IO(new IduIO)
   private val inst = io.in.bits.inst
   val (src1Addr, src2Addr, rdAddr) = (inst(19, 15), inst(24, 20), inst(11, 7))
@@ -41,7 +41,7 @@ class Idu extends CoreModule{
   io.out.bits.data.imm           := imm
   io.out.bits.data.uimm_ext      := uimm_ext
   io.out.bits.data.src_data      := DontCare
-  io.in.ready := io.out.ready
+  io.in.ready                    := io.out.ready
 
 
 }

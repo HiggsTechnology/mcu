@@ -1,19 +1,19 @@
 package Core.Stage3
 
 import Core.Stage2.LSUOpType
-import Core.{CoreModule, Fu, LookupTree, SignExt, ZeroExt}
+import Core.{Config, Fu, LookupTree, RAMHelper, SignExt, ZeroExt}
 import chisel3._
 import chisel3.util._
 
-class Lsu extends CoreModule {
-
-  def genWmask(sizeEncode: UInt): UInt = {
-    LookupTree(sizeEncode, List(
-      "b00".U -> 0x1.U, //0001 << addr(2:0) 1111 1111
-      "b01".U -> 0x3.U, //0011              1111 1111 1111 1111
-      "b10".U -> 0xf.U, //1111              1111 1111 1111 1111 1111 1111 1111 1111
-      "b11".U -> 0xff.U //11111111
-    )).asUInt()
+class Lsu extends Module with Config {
+  // TODO : mask should be reconsidered when bits = 32
+  def genWmask(addr: UInt, sizeEncode: UInt): UInt = {
+    (LookupTree(sizeEncode, List(
+      "b00".U -> BigInt(0xff).U(XLEN.W), //0001 << addr(2:0)
+      "b01".U -> BigInt(0xffff).U(XLEN.W), //0011
+      "b10".U -> BigInt(0xffffffffL).U(XLEN.W), //1111
+      "b11".U -> (BigInt(Long.MaxValue) * 2 + 1).U(XLEN.W) //11111111
+    )) ).asUInt()
   }
 
   def genWdata(data: UInt, sizeEncode: UInt): UInt = {
@@ -26,28 +26,32 @@ class Lsu extends CoreModule {
   }
   val io = IO(new Bundle{
     val in = Input(new Fu)
+    val valid = Input(Bool())
     val res = ValidIO(UInt(DataWidth))
     val memBus = Output//TODO
   })
   val lsu_functype = io.in.functype
   val lsu_optype = io.in.optype
-  val src1 = Wire(UInt(XLEN.W))
-  val src2 = Wire(UInt(XLEN.W))
 
 
-  val addr = RegInit(src1)
-  addr := src1
-  val storedata = src1
+  val addr      = io.in.src(0)
+  val storedata = io.in.src(1)
   val isStore = LSUOpType.isStore(lsu_optype)
   val size = lsu_optype(1,0)
-  val wdata_align = genWdata(storedata, size) << (addr(2, 0) << 3.U)
-  val mask_align = genWmask(size) << (addr(2, 0))
-//  TODO
-//  mem_req_addr := src1
-//  mem_req_data := src2
+  val wdata_align = genWdata(storedata, size) << (addr(2, 0) * 8.U)
+  val mask_align = genWmask(addr, size) << (addr(2, 0) * 8.U)
+
   val mem_resp = Wire(UInt(DataWidth))
   mem_resp := 0.U// TODO io.toMem.resp.bits.data
-  val rdata_sel =  mem_resp >> (addr(2, 0) << 3.U)
+  val ram = Module(new RAMHelper)
+  ram.io.clk  := clock
+  ram.io.en   := io.valid
+  ram.io.rIdx := (addr - PcStart.U) >> 3
+  ram.io.wIdx := (addr - PcStart.U) >> 3
+  ram.io.wen  := io.valid & isStore
+  ram.io.wdata := wdata_align
+  ram.io.wmask := mask_align
+  val rdata_sel =  ram.io.rdata >> (addr(2, 0) * 8.U)
   io.res.bits := LookupTree(lsu_optype, List(
     LSUOpType.lb   -> SignExt(rdata_sel(7, 0) , XLEN),
     LSUOpType.lh   -> SignExt(rdata_sel(15, 0), XLEN),
@@ -57,6 +61,7 @@ class Lsu extends CoreModule {
     LSUOpType.lhu  -> ZeroExt(rdata_sel(15, 0), XLEN),
     LSUOpType.lwu  -> ZeroExt(rdata_sel(31, 0), XLEN)
   ))
+  io.res.valid := io.valid   //ramhelper 是否需要延一拍
 
 
 }
