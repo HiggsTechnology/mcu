@@ -50,6 +50,12 @@ class Stage3 extends Module with Config {
   io.redirect.valid        := bru.io.bru_taken
   io.redirect.bits.new_pc  := alu_res
   io.redirect.bits.mispred := alu_res =/= io.in.bits.fetch_info.pre_pc
+  //  printf("func_type %x\n", io.in.bits.ctrl.func_type)
+  //  printf("bru_taken %d\n", bru.io.bru_taken)
+  //  printf("alu_res %d\n", alu_res)
+  //  printf("fech_pre_pc %x\n",io.in.bits.fetch_info.pre_pc)
+  //  printf("#################################################\n")
+
 
   // lsu
   lsu.io.valid       := func_type === FuncType.lsu
