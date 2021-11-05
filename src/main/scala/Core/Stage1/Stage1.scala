@@ -20,7 +20,7 @@ class Stage1 extends Module with Config  {
   val pc = RegInit(pc_reset)
   val n_pc = RegInit(pc)
 
-  val pc_wire = Wire(UInt(AddrWidth))
+//  val pc_wire = Wire(UInt(AddrWidth))
 
   val ram = Module(new RAMHelper)
   ram.io.clk := clock
@@ -38,8 +38,8 @@ class Stage1 extends Module with Config  {
 
   val predict_pc = predecode.io.offset + pc
   val ifu_redirect = predecode.io.is_br && ((predecode.io.br_type === BrType.J) || (predecode.io.br_type === BrType.B && predecode.io.offset < 0.U))
-  pc_wire := Mux(io.redirect.bits.mispred, io.redirect.bits.new_pc, Mux(ifu_redirect, predict_pc, n_pc + 4.U))
-  pc := pc_wire
+  pc := Mux(io.redirect.bits.mispred, io.redirect.bits.new_pc, Mux(ifu_redirect, predict_pc, pc + 4.U))
+//  pc := pc_wire
 
 
   val flush = io.redirect.bits.mispred && io.redirect.valid
