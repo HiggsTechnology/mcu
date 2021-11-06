@@ -47,9 +47,10 @@ class Stage3 extends Module with Config {
   bru.io.in.functype       := io.in.bits.ctrl.func_type
   bru.io.in.src(0)         := io.in.bits.data.src_data(0)
   bru.io.in.src(1)         := io.in.bits.data.src_data(1)
-  io.redirect.valid        := bru.io.bru_taken
-  io.redirect.bits.new_pc  := alu_res
-  io.redirect.bits.mispred := alu_res =/= io.in.bits.fetch_info.pre_pc
+  val bru_pc_res = Mux(bru.io.bru_taken, alu_res, io.in.bits.fetch_info.pc + 4.U)
+  io.redirect.valid        := io.in.valid && func_type === FuncType.bru
+  io.redirect.bits.new_pc  := bru_pc_res
+  io.redirect.bits.mispred := bru_pc_res =/= io.in.bits.fetch_info.pre_pc
   //  printf("func_type %x\n", io.in.bits.ctrl.func_type)
   //  printf("bru_taken %d\n", bru.io.bru_taken)
   //  printf("alu_res %d\n", alu_res)

@@ -16,11 +16,13 @@ class Stage1 extends Module with Config  {
 //    val to_mem = Decoupled(new IBus)
     val out = DecoupledIO(new FetchPreInfo)
   })
-  val pc_reset = PcStart.U(AddrWidth)
-  val pc = RegInit(pc_reset)
-  val n_pc = RegInit(pc)
+  val mispred = io.redirect.bits.mispred && io.redirect.valid
 
-//  val pc_wire = Wire(UInt(AddrWidth))
+  val pc_reset = PcStart.U(AddrWidth)
+  val pcReg = RegInit(pc_reset)
+  val pc = Wire(UInt(AddrWidth))
+
+  
 
   val ram = Module(new RAMHelper)
   ram.io.clk := clock
@@ -37,9 +39,12 @@ class Stage1 extends Module with Config  {
   predecode.io.instr := inst
 
   val predict_pc = predecode.io.offset + pc
-  val ifu_redirect = predecode.io.is_br && ((predecode.io.br_type === BrType.J) || (predecode.io.br_type === BrType.B && predecode.io.offset < 0.U))
+  val ifu_redirect = predecode.io.is_br && ((predecode.io.br_type === BrType.J) || (predecode.io.br_type === BrType.B && predecode.io.offset.asSInt < 0.S))
+
+  pc := Mux(mispred, io.redirect.bits.new_pc, pcReg)
+  pcReg := Mux(ifu_redirect, predict_pc, pc + 4.U)
   //pc := Mux(io.redirect.bits.mispred && io.redirect.valid, io.redirect.bits.new_pc, Mux(ifu_redirect, predict_pc, pc + 4.U))
-  pc := Mux(io.redirect.valid,io.redirect.bits.new_pc,pc + 4.U)
+  //pc := Mux(io.redirect.valid,io.redirect.bits.new_pc,pc + 4.U)
 //  pc := pc_wire
   //  printf("instr %x\n",inst)
   //  printf("predict_pc %x\n",predict_pc)
@@ -51,12 +56,12 @@ class Stage1 extends Module with Config  {
 
   //printf("pc %x, inst %x\n",pc,inst)
 
-  val flush = io.redirect.bits.mispred && io.redirect.valid
+  
 
   io.out.bits.inst   := inst
   io.out.bits.pc     := pc
   io.out.bits.is_br  := predecode.io.is_br
-  io.out.bits.pre_pc := predict_pc
-  io.out.valid       := !flush && !predecode.io.is_br  // TODO io.can_enq && io.bus.fire()
+  io.out.bits.pre_pc := Mux(ifu_redirect, predict_pc, pc + 4.U)
+  io.out.valid       := true.B//!mispred && !predecode.io.is_br  // TODO io.can_enq && io.bus.fire()
 
 }

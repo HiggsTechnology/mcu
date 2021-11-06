@@ -17,7 +17,7 @@ class Stage2 extends Module with Config {
   val idu = Module(new Idu)
   val reg = Module(new Regfile(numReadPorts = 2,numWritePorts = 1,numReg = RegNum))
   idu.io.in <> io.in
-  idu.io.out.ready := io.in.valid
+  idu.io.out.ready := io.out.ready
   private val reg_data = Wire(Vec(2,UInt(XLEN.W)))
   private val src_in = Wire(Vec(2,UInt(XLEN.W)))
   reg.io.read(0).addr := idu.io.out.bits.ctrl.rfSrc(0)
@@ -35,16 +35,23 @@ class Stage2 extends Module with Config {
     SrcType.imm  -> idu.io.out.bits.data.imm
   ))
 
+  val need_forward = Wire(Vec(2,Bool()))
+  for(i <- 0 until 2){
+    need_forward(i) := (io.out.bits.ctrl.rfSrc(i) === io.wb.bits.addr) && io.out.bits.ctrl.src_type(i) === SrcType.reg && io.wb.bits.ena && io.wb.valid
+  }
+
+
   io.out.bits.fetch_info <> io.in.bits
   io.out.bits.ctrl       <> idu.io.out.bits.ctrl
   io.out.bits.data       <> idu.io.out.bits.data
-  io.out.bits.data.src_data(0) <> src_in(0)
-  io.out.bits.data.src_data(1) <> src_in(1)
+  for(i <- 0 until 2){
+    io.out.bits.data.src_data(i) := Mux(need_forward(i),io.wb.bits.data,src_in(i))
+  }
   io.out.valid := io.in.valid
 
 
   reg.io.write(0).data := io.wb.bits.data
-  reg.io.write(0).ena  := io.wb.bits.ena
+  reg.io.write(0).ena  := io.wb.bits.ena && io.wb.valid
   reg.io.write(0).addr := io.wb.bits.addr
 
 

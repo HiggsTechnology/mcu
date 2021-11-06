@@ -16,14 +16,35 @@ class EleCore extends Module with Config{
   val stage2 = Module(new Stage2)
   val stage3 = Module(new Stage3)
 
-  stage1.io.out      <> stage2.io.in
-  stage2.io.out      <> stage3.io.in
+  val flush = stage3.io.redirect.valid && stage3.io.redirect.bits.mispred
+
+  val piplineReg1_valid = RegInit(false.B)
+  val piplineReg1_data  = RegInit(0.U.asTypeOf(stage1.io.out.bits))
+  when(stage2.io.in.fire || !piplineReg1_valid || flush){
+    piplineReg1_valid := stage1.io.out.valid
+    piplineReg1_data  := stage1.io.out.bits
+  }
+  stage1.io.out.ready := stage2.io.in.fire || !piplineReg1_valid || flush
+  stage2.io.in.valid := piplineReg1_valid && !flush
+  stage2.io.in.bits  := piplineReg1_data
+
+  val piplineReg2_valid = RegInit(false.B)
+  val piplineReg2_data  = RegInit(0.U.asTypeOf(stage2.io.out.bits))
+  when(stage3.io.in.fire || !piplineReg2_valid || flush){
+    piplineReg2_valid := stage2.io.out.valid && !flush
+    piplineReg2_data  := stage2.io.out.bits
+  }
+  stage2.io.out.ready := stage3.io.in.fire || !piplineReg2_valid || flush
+  stage3.io.in.valid := piplineReg2_valid
+  stage3.io.in.bits  := piplineReg2_data
+
+  
   stage1.io.redirect <> stage3.io.redirect
   stage2.io.wb       <> stage3.io.wb
 
-  io.valid     := withClock(clock){
-    ~reset.asBool()
-  }
+
+  //difftest
+  io.valid     := stage3.io.wb.valid
   io.pc_instr.pc   := stage3.io.in.bits.fetch_info.pc
   io.pc_instr.inst := stage3.io.in.bits.fetch_info.inst
   io.regout.ena    := stage3.io.wb.bits.ena
