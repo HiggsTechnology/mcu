@@ -56,12 +56,18 @@ class SimTop extends Module {
   csrCommit.io.mideleg        := 0.U
   csrCommit.io.medeleg        := 0.U
 
+  val cycleCnt = RegInit(0.U(64.W))
+  cycleCnt := cycleCnt + 1.U
+  val instrCnt = RegInit(0.U(64.W))
+  when(instrCommit.io.valid){
+    instrCnt := instrCnt + 1.U
+  }
   val trap = Module(new DifftestTrapEvent)
   trap.io.clock    := clock
   trap.io.coreid   := 0.U
   trap.io.valid    := RegNext(RegNext(EleCore.io.pc_instr.inst)) === BigInt("0000006b", 16).U
   trap.io.code     := 0.U // GoodTrap
   trap.io.pc       := RegNext(RegNext(EleCore.io.pc_instr.pc))
-  trap.io.cycleCnt := 0.U
-  trap.io.instrCnt := 0.U
+  trap.io.cycleCnt := cycleCnt
+  trap.io.instrCnt := instrCnt
 }
