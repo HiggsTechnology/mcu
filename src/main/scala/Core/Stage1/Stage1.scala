@@ -38,7 +38,8 @@ class Stage1 extends Module with Config  {
 
   val predict_pc = predecode.io.offset + pc
   val ifu_redirect = predecode.io.is_br && ((predecode.io.br_type === BrType.J) || (predecode.io.br_type === BrType.B && predecode.io.offset < 0.U))
-  pc := Mux(io.redirect.bits.mispred && io.redirect.valid, io.redirect.bits.new_pc, Mux(ifu_redirect, predict_pc, pc + 4.U))
+  //pc := Mux(io.redirect.bits.mispred && io.redirect.valid, io.redirect.bits.new_pc, Mux(ifu_redirect, predict_pc, pc + 4.U))
+  pc := Mux(io.redirect.valid,io.redirect.bits.new_pc,pc + 4.U)
 //  pc := pc_wire
   //  printf("instr %x\n",inst)
   //  printf("predict_pc %x\n",predict_pc)
@@ -47,6 +48,8 @@ class Stage1 extends Module with Config  {
   //  printf("io.redirect new_pc %x\n",io.redirect.bits.new_pc)
   //  printf("new_pc %x\n", io.redirect.bits.new_pc)
   //  printf("real pc %x\n",Mux(io.redirect.bits.mispred && io.redirect.valid, io.redirect.bits.new_pc, Mux(ifu_redirect, predict_pc, pc + 4.U)))
+
+  //printf("pc %x, inst %x\n",pc,inst)
 
   val flush = io.redirect.bits.mispred && io.redirect.valid
 

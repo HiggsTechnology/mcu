@@ -64,14 +64,19 @@ class Stage3 extends Module with Config {
   lsu.io.in.src(0)   := alu_res
   lsu.io.in.src(1)   := io.in.bits.data.src_data(1)
 
+  //printf("wb ena %d, addr %d, data %x, func_type %d\n",io.in.bits.ctrl.rfWen,io.in.bits.ctrl.rfrd,io.wb.bits.data,func_type)
+  //printf("lsu res %x\n",lsu.io.res.bits)
+
   io.wb.valid     := io.in.valid
   io.wb.bits.ena  := io.in.bits.ctrl.rfWen
   io.wb.bits.addr := io.in.bits.ctrl.rfrd
 
-  when(func_optype === FuncType.alu) {
+  when(func_type === FuncType.alu) {
     io.wb.bits.data := alu_res
-  }.elsewhen(func_optype === FuncType.lsu) {
+  }.elsewhen(func_type === FuncType.lsu){
     io.wb.bits.data := lsu.io.res.bits
+  }.elsewhen(func_type === FuncType.bru){
+    io.wb.bits.data := io.in.bits.fetch_info.pc + 4.U
   }.otherwise {
     io.wb.bits.data := DontCare
   }
