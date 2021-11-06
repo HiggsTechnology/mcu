@@ -59,7 +59,7 @@ class Stage3 extends Module with Config {
 
 
   // lsu
-  lsu.io.valid       := func_type === FuncType.lsu
+  lsu.io.valid       := func_type === FuncType.lsu && io.in.valid
   lsu.io.in.optype   := io.in.bits.ctrl.func_optype
   lsu.io.in.functype := io.in.bits.ctrl.func_type
   lsu.io.in.src(0)   := alu_res
