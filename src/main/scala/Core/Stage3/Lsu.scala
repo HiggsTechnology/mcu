@@ -63,7 +63,4 @@ class Lsu extends Module with Config {
   ))
   io.res.valid := io.valid   //ramhelper 是否需要延一拍
 
-  //printf("lsu addr %x, store_data %x, load_data %x\n",addr,storedata,io.res.bits)
-
-
 }

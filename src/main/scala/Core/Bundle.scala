@@ -14,7 +14,6 @@ class FetchInfo extends CoreBundle {
 }
 
 trait HasPred {
-  val is_br = Output(Bool())
   val pre_pc = Output(UInt(Config.AddrWidth))
 }
 
@@ -34,8 +33,6 @@ class CtrlSignal extends CoreBundle {
   val rfSrc        = Vec(2,UInt(RegNumWidth.W)) //src regfile address//logic
   val rfrd         = UInt(RegNumWidth.W)    //rd regfile address
   val rfWen        = Bool()       //regfile write enable
-  //  val interruptVec = Vec(TrapConfig.InterruptVecWidth, OutBool())
-  //  val exceptionVec = Vec(TrapConfig.ExceptionVecWidth, OutBool())
 }
 
 class DataSrc extends CoreBundle {

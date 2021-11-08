@@ -32,7 +32,6 @@ class RegWriteIO extends Bundle with Config {
 class RegfileIO(numReadPorts: Int, numWritePorts: Int) extends Bundle {
   val read  = Vec(numReadPorts, new RegReadIO)
   val write = Vec(numWritePorts, new RegWriteIO)
-//  val debug_read = Vec(32, new RegReadIO)
 }
 
 class Regfile(numReadPorts: Int, numWritePorts: Int, numReg: Int) extends Module {
@@ -52,8 +51,5 @@ class Regfile(numReadPorts: Int, numWritePorts: Int, numReg: Int) extends Module
   mod.io.clock := clock
   mod.io.coreid := 0.U
   mod.io.gpr := RegNext(regfile.regs)
-//  for (rport <- io.debug_read) {
-//    rport.data := Mux(rport.addr === 0.U, 0.U, regfile.read(rport.addr))
-//  }
 
 }

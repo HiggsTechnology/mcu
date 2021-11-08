@@ -2,7 +2,6 @@ package Core
 import chisel3._
 
 abstract class CoreBundle extends Bundle with Config {}
-//abstract class CoreModule extends Module with Config {}
 
 trait Config {
   val XLEN = 64
