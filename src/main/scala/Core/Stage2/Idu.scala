@@ -1,7 +1,8 @@
 package Core.Stage2
 
 
-import Core.{Config, CoreBundle,FetchPreInfo, LookupTree, MicroOp, SignExt, ZeroExt}
+import utils.{LookupTree, SignExt, ZeroExt}
+import Core.{Config, CoreBundle, FetchPreInfo, MicroOp}
 import chisel3._
 import chisel3.util._
 import RVIInstr._

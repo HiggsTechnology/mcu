@@ -1,6 +1,7 @@
 package Core.Stage3
-import Core.{Config, Fu, LookupTree, SignExt}
+import Core.{Config, Fu}
 import Core.Stage2.ALUOpType
+import utils.{LookupTree, SignExt}
 import chisel3._
 import chisel3.util._
 

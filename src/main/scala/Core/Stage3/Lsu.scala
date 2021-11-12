@@ -1,7 +1,8 @@
 package Core.Stage3
 
 import Core.Stage2.LSUOpType
-import Core.{Config, Fu, LookupTree, RAMHelper, SignExt, ZeroExt}
+import utils.{LookupTree, SignExt, ZeroExt}
+import Core.{Config, Fu, RAMHelper}
 import chisel3._
 import chisel3.util._
 

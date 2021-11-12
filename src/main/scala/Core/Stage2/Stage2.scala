@@ -1,6 +1,7 @@
 package Core.Stage2
 
-import Core.{Config, CoreBundle, FetchInfo, FetchPreInfo, LookupTree, MicroOp, Regfile, WriteBack}
+import utils.LookupTree
+import Core.{Config, CoreBundle, FetchInfo, FetchPreInfo, MicroOp, Regfile, WriteBack}
 import chisel3.util._
 import chisel3._
 

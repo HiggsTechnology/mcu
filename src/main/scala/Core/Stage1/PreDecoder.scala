@@ -1,6 +1,7 @@
 package Core.Stage1
 
-import Core.{SignExt,Config}
+import Core.Config
+import utils.SignExt
 import chisel3._
 import chisel3.util._
 

@@ -1,7 +1,8 @@
 package Core.Stage3
 
 import Core.Stage2.{BRUOpType, FuncType}
-import Core.{Config, Fu, LookupTree}
+import utils.LookupTree
+import Core.{Config, Fu}
 import chisel3._
 import chisel3.util._
 

@@ -52,3 +52,22 @@ class Fu extends CoreBundle{
   val optype = (FuncOpType.uwidth)
   val functype = (FuncType.uwidth)
 }
+
+class LSU2MemIO extends  Bundle with Config{
+  /** r:0, w:1 */
+  val valid     = Output(Bool())
+  val rready    = Input(Bool())
+  val wready    = Input(Bool())
+  val is_write  = Output(Bool())
+  val addr      = Output(UInt(XLEN.W))
+  val rdata     = Input(UInt(XLEN.W))
+  val wdata     = Output(UInt(XLEN.W))
+  val strb      = Output(UInt(8.W))
+}
+
+class IFU2MemIO extends  Bundle with Config{
+  val valid     = Output(Bool())
+  val ready     = Input(Bool())
+  val addr        = Output(UInt(XLEN.W))
+  val rdata     = Input(UInt((XLEN * 4).W))
+}
